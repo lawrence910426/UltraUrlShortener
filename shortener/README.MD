@@ -16,4 +16,11 @@ CREATE TABLE urls (
     expireAt INT,
     urlId VARCHAR(512) PRIMARY KEY 
 )
+CREATE TABLE sumTable (
+    totalRows INT
+)
+```
+
+```redis=
+urlId, [url, expireAt], value
 ```
