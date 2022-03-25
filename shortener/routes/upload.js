@@ -3,12 +3,13 @@ var router = express.Router();
 const crypto = require('crypto')
 const moment = require('moment');
 const redis = require('redis');
-const redisClient = redis.createClient();
+const redisClient = redis.createClient({
+  url: process.env.redisConnectionString
+});
 (async function() { await redisClient.connect(); })()
 
 var mysql = require('mysql');
-var pool  = mysql.createPool({
-  connectionLimit : 10,
+var connection  = mysql.createConnection({
   host            : process.env.dbHost,
   user            : process.env.dbUser,
   password        : process.env.dbPassword,
@@ -25,7 +26,7 @@ redisClient.on("error", error => {
 
 function selectSum() {
   return new Promise((res) => {
-    pool.query(
+    connection.query(
       'SELECT totalRows FROM sumTable', 
       (error, results, fields) => res([error, results, fields])
     );
@@ -34,7 +35,7 @@ function selectSum() {
 
 function updateSum() {
   return new Promise(res => {
-    pool.query(
+    connection.query(
       'UPDATE sumTable SET totalRows = totalRows + 1', 
       (error, results, fields) => res([error, results, fields])
     );
@@ -43,46 +44,47 @@ function updateSum() {
 
 function insertUrl(url, expireAt, urlId) {
   return new Promise(res => {
-    pool.query(
+    connection.query(
       'INSERT INTO urls (url, expireAt, urlId) VALUES (?, ?, ?)', 
-      [url, , hashed],
+      [url, expireAt, urlId],
       (error, results, fields) => res([error, results, fields])
     );
   });
 }
 
 function convertInt(x) {
+  x += 1; // Count from 1.
   var ans = ""
   var mapping = []
   for(var i = 0; i < 10; i++) 
-    mapping.append(String.fromCharCode('0'.charCodeAt(0) + i))
+    mapping.push(String.fromCharCode('0'.charCodeAt(0) + i))
   for(var i = 0; i < 26; i++) 
-    mapping.append(String.fromCharCode('a'.charCodeAt(0) + i))
+    mapping.push(String.fromCharCode('a'.charCodeAt(0) + i))
   for(var i = 0; i < 26; i++) 
-    mapping.append(String.fromCharCode('A'.charCodeAt(0) + i))
+    mapping.push(String.fromCharCode('A'.charCodeAt(0) + i))
   while(x > 0) {
-    ans += (x % 62)
-    x = floor(x / 62)
+    ans += mapping[x % 62]
+    x = Math.floor(x / 62)
   }
   return ans;
 }
 
-async function insertTransaction(url, expireAt, urlId) {
+async function insertTransaction(url, expireAt) {
   return new Promise((res, rej) => {
-    pool.beginTransaction(async function(err) {
+    connection.beginTransaction(async function(err) {
       if(err) rej(err)
       var [error, results, fields] = await selectSum();
       if(error) rej(error)
-      var latest = results[0].totalRows
+      var urlId = convertInt(results[0].totalRows)
       var [error, results, fields] = await updateSum();
       if(error) rej(error)
       var [error, results, fields] = await insertUrl(url, expireAt, urlId);
       if(error) rej(error)
       
-      pool.commit((err) => {
+      connection.commit((err) => {
         if (err) 
-          return pool.rollback(function() { rej(err); });
-        res(convertInt(latest));
+          return connection.rollback(function() { rej(err); });
+        res(urlId);
       });
     })
   })
@@ -91,10 +93,10 @@ async function insertTransaction(url, expireAt, urlId) {
 /* Upload functions. */
 router.post('/urls', async function(req, res) {
   try {
-    const urlId = await insertTransaction(req.body.url, expire, hashed);
     var expire = moment(req.body.expireAt).unix();
+    const urlId = await insertTransaction(req.body.url, expire);
     res.send({
-      id: hashed,
+      id: urlId,
       shortUrl: "http://localhost/" + urlId
     })
     redisClient.hSet(urlId, 'url', req.body.url);

@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 const moment = require('moment');
 const redis = require('redis');
-const redisClient = redis.createClient();
+const redisClient = redis.createClient({ url: process.env.redisConnectionString });
 (async function() { await redisClient.connect(); })()
 
 var mysql = require('mysql');
@@ -26,11 +26,12 @@ async function queryUrl(urlId) {
 /* Redirect functions. */
 router.get('/:urlId', async function(req, res, next) {
   try {
+    console.log(req.params.urlId)
     var url, expireAt;
 
-    const value = await redisClient.hGetAll(req.params.urlId)
-    console.log(value)
-    if(value == undefined) {
+    var redisValue = undefined;
+    if(process.env.enableRedis == 'on') redisValue = await redisClient.hGetAll(req.params.urlId)
+    if(redisValue == undefined) {
       const [ error, results, fields ] = await queryUrl(req.params.urlId);
       console.log(error, results, fields)
       if(error) throw error;
@@ -38,8 +39,8 @@ router.get('/:urlId', async function(req, res, next) {
       url = results[0].url;
       expireAt = results[0].expireAt;
     } else {
-      url = value.url;
-      expireAt = value.expireAt;
+      url = redisValue.url;
+      expireAt = redisValue.expireAt;
     }
 
     if(moment().unix() < expireAt)

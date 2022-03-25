@@ -9,6 +9,9 @@
 - Inject username and password from environment variables
 - System dead when 2038 (Unix timestamp)
 
+# Using transaction instead of COUNT(*)
+- https://codehunter.cc/a/database/mysql-complexity-of-select-count-from-mytable
+
 # Schema
 ```sql=
 CREATE TABLE urls (
@@ -24,3 +27,10 @@ CREATE TABLE sumTable (
 ```redis=
 urlId, [url, expireAt], value
 ```
+
+# Experiments
+- No redis, 1 load balancer
+- No redis, $N$ load balancer
+- 1 redis, 1 load balancer
+- 1 redis, $N$ load balancer
+- $N$ redis, $N$ load balancer
