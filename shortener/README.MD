@@ -1,16 +1,16 @@
-# Hash algorithms
-- SHA-1, MD5 are vulnerable to length extension attack
-- SHA-512 is not vulnerable to length extension attack
-- Collision possibility $C = 1 - \frac{P(n, m)}{m^n} \approx \frac{m^2}{2n}$ (Taylor expansion)
-- Assume we have $m=10^30$ urls, take sha-512 which makes $n=2^512$, which makes $C \approx 3.72 \cdot 10^{-95}$.
+# Usage
 
-# Security issues
-- Avoided MySQL
+
+# Security
+- Avoided SQL Injection
 - Inject username and password from environment variables
 - System dead when 2038 (Unix timestamp)
 
-# Using transaction instead of COUNT(*)
-- https://codehunter.cc/a/database/mysql-complexity-of-select-count-from-mytable
+# Performance
+- Use another table to store COUNT(*) https://codehunter.cc/a/database/mysql-complexity-of-select-count-from-mytable
+- Multiple read connection & Single write connection. (Assume more read operations)
+- Redis cache.
+- Stateless load balancer. (High scalability)
 
 # Schema
 ```sql=
