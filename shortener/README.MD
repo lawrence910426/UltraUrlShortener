@@ -1,5 +1,27 @@
 # Usage
-
+Fill the following environment variables.
+```bash=
+export dbHost=
+export dbUser=
+export dbPassword=
+export dbName=
+export redisConnectionString=
+export enableRedis=
+```
+For example, the following configuration had been used for developmnet.
+```bash=
+export dbHost=127.0.0.1
+export dbUser=lawrence910426
+export dbPassword=2rjurrru
+export dbName=urlshortener
+export redisConnectionString='redis://localhost:6380'
+export enableRedis=off
+```
+Then, install the project and run the project.
+```bash=
+npm install .
+npm run start
+```
 
 # Security
 - Avoided SQL Injection
