@@ -1,7 +1,5 @@
-FROM node:17-bullseye
-WORKDIR /app
-
-COPY package.json ./
+FROM node
+COPY ./ ./
 
 RUN npm install .
 CMD ["npm", "run", "start"]

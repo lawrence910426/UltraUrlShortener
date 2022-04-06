@@ -60,11 +60,9 @@ function convertInt(x) {
     mapping.push(String.fromCharCode('0'.charCodeAt(0) + i))
   for(var i = 0; i < 26; i++) 
     mapping.push(String.fromCharCode('a'.charCodeAt(0) + i))
-  for(var i = 0; i < 26; i++) 
-    mapping.push(String.fromCharCode('A'.charCodeAt(0) + i))
   while(x > 0) {
-    ans += mapping[x % 62]
-    x = Math.floor(x / 62)
+    ans += mapping[x % 36]
+    x = Math.floor(x / 36)
   }
   return ans;
 }
@@ -93,6 +91,7 @@ async function insertTransaction(url, expireAt) {
 /* Upload functions. */
 router.post('/urls', async function(req, res) {
   try {
+    console.log(req.body)
     var expire = moment(req.body.expireAt).unix();
     const urlId = await insertTransaction(req.body.url, expire);
     res.send({

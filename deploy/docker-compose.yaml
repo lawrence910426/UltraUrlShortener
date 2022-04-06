@@ -1,47 +1,70 @@
-version: '1'
+version: '3'
 services:
   frontend:
     container_name: 'frontend-nginx'
     build: ./nginx
     restart: always
     ports:
-      - "80:80"
+      - 80:80
     depends_on:
       - backend-1
+      - backend-2
 
   backend-1:
-    container_name: 'load-balancer'
+    container_name: 'load-balancer-1'
     build: ../shortener
     restart: always
     ports:
-      - "1001:80"
+      - 1001:3000
     depends_on:
-      - redis
-      - mysql
-    environment:
-      - dbHost=127.0.0.1
+      - cache-server
+      - db-server
+    environment: # -- Extremely bad practice for security -- #
+      - dbHost=192.168.50.116
       - dbUser=root
       - dbPassword=2rjurrru
       - dbName=urlshortener
-      - redisConnectionString='redis://localhost:6380'
-      - enableRedis=off
-  
-  cache:
+      - redisConnectionString=redis://192.168.50.116:6379
+      - enableRedis=on
+    links:
+      - cache-server
+      - db-server
+
+  backend-2:
+    container_name: 'load-balancer-2'
+    build: ../shortener
+    restart: always
+    ports:
+      - 1002:3000
+    depends_on:
+      - cache-server
+      - db-server
+    environment: # -- Extremely bad practice for security -- #
+      - dbHost=192.168.50.116
+      - dbUser=root
+      - dbPassword=2rjurrru
+      - dbName=urlshortener
+      - redisConnectionString=redis://192.168.50.116:6379
+      - enableRedis=on
+    links:
+      - cache-server
+      - db-server
+
+  cache-server:
     container_name: 'redis'
     image: redis
     ports:
-      - 6380:6380
+      - 6379:6379
     
-  db:
+  db-server:
     container_name: 'mysql'
     image: mysql
-    command: --default-authentication-plugin=2rjurrru
     restart: always
-    environment:
+    environment: # -- Extremely bad practice for security -- #
       MYSQL_ROOT_PASSWORD: 2rjurrru
       MYSQL_DATABASE: urlshortener
     volumes:
-      - ./mysql:/docker-entrypoint-initdb.db
+      - ./mysql/schema.sql:/docker-entrypoint-initdb.db/schema.sql
     ports:
       - 3306:3306
   adminer:
