@@ -48,6 +48,7 @@ router.get('/:urlId', async function(req, res, next) {
     else
       res.send("Link outdated.")
   } catch (e) {
+    res.send(e)
     console.log(e)
   }
 });

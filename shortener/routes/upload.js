@@ -102,6 +102,7 @@ router.post('/urls', async function(req, res) {
     redisClient.hSet(urlId, 'expireAt', expire);
     console.log(urlId, req.body.url, expire)
   } catch (e) {
+    res.send(e)
     console.log(e)
   }
 });
